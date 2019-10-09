@@ -3,8 +3,6 @@
 #include <string.h>
 #include "parse_input.c"
 
-#define INFINITY 10000000000
-
 int min(int a, int b) {
   if (a<b) {
     return a;
@@ -15,7 +13,7 @@ int min(int a, int b) {
 
 
 int main(int argc,char* argv[]) {
-  char filename[100] = "examples/16.txt";
+  char filename[100] = "examples/4.txt";
   FILE *fp = fopen(filename, "r");
   int size;
 
