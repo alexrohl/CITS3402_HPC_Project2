@@ -13,7 +13,7 @@ Split array into np pieces
 for node in range(np):
     SEND to slave:
         global_index
-        sub_array
+        sub_array (MPI_SCATTER?)
         num_local_elements
 
 get kth_row <- row 0
@@ -67,6 +67,8 @@ for iteration (k) in range(size):
 
 #iterations complete so now merge sub arrays into one array
 --- MASTER PROCESS ---
-GATHER?
+MPI_GATHER?
+  sub_array
+
 
 Print(resulting array)
