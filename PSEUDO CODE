@@ -21,9 +21,7 @@ global_index = lo + np*pid
 --- MASTER PROCESS ---
 get kth_row <- row 0
 get kth_col <- column 0
-global_index = 0
-num_local_elements += lo #master process will hold the left_overs in addition to its sub_array
-sub_array append first lo elements to front
+get leftovers <- matrix[0:lo]
 ----------------------
 
 MPI_Bcast
