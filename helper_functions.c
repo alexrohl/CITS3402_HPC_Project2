@@ -3,7 +3,18 @@
 #include <string.h>
 #include <mpi.h>
 #include <unistd.h>
+#include <assert.h>
 
+void print_int_array(int * arr, int len, char name[64]) {
+    printf("Array %s: [",name);
+
+    int i;
+    for (i=0; i<len; i++) {
+      printf("%d,", arr[i]);
+    }
+    printf("] has length %d\n",len);
+    return;
+}
 //assume 1D matrix...
 int* get_k_row(int* matrix, int size, int k) {
   //printf("%d row ",k);
@@ -61,9 +72,15 @@ void MPI_SendAll(int index, int* matrix, int elements_per_process, int i) {
 
 
 //Now we've received the elements, we want to update the array locally and send relevant information for the next processes
-int* update_local_array(int* local_array, int index_received, int n_elements, int k, int* k_col, int* k_row, int size) {
+int * update_local_array(int* local_array, int index_received, int n_elements, int k, int* k_col, int* k_row, int size) {
+  assert(k==0);
+  assert(index_received<=size*size);
+  assert(n_elements<=size*size);
+
   int global_index,i,j;
   int ind = 0;
+  print_int_array(k_col,size,"k_col");
+  print_int_array(k_row,size,"k_row");
   //build: [row/column index value]
 
 
@@ -71,7 +88,10 @@ int* update_local_array(int* local_array, int index_received, int n_elements, in
   for (global_index=index_received;global_index<n_elements;global_index++) {
     i = global_index/size;
     j = global_index%size;
+    printf("BEFORE i: %d, j: %d, val: %d\n",i,j,local_array[ind]);
     local_array[ind] = min(local_array[ind], k_col[i] + k_row[j]);
+    printf("AFTER i: %d, j: %d, val: %d\n",i,j,local_array[ind]);
+    ind++;
     /*
     //checks if we have an element that needs to be sent to master to build k_row/k_col
     if (i==k+1) {
@@ -95,17 +115,6 @@ int* update_local_array(int* local_array, int index_received, int n_elements, in
   */
   }
   return local_array;
-}
-
-void print_int_array(int * arr, int len, char name[64]) {
-    printf("Array %s: [",name);
-
-    int i;
-    for (i=0; i<len; i++) {
-      printf("%d,", arr[i]);
-    }
-    printf("] has length %d\n",len);
-    return;
 }
 
 int * append_int_to_array(int *arr1, int val1, int index){

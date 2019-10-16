@@ -4,10 +4,12 @@
 #include "parse_input.c"
 #include "helper_functions.c"
 #include <mpi.h>
+#include <assert.h>
+
 
 int main(int argc,char* argv[]) {
   int pid,np,size,lo,num_local_elements; //lo: left overs
-  int *matrix, *k_row, *k_col;
+  int *matrix;
 
   // ---INITIALIZE MPI---
   MPI_Init(&argc, &argv);
@@ -16,14 +18,16 @@ int main(int argc,char* argv[]) {
 
   // master process to get input matrix
   if (pid == 0) {
-    char filename[100] = "examples/16.txt";
+    char filename[100] = "examples/4.txt";
     FILE *fp = fopen(filename, "r");
 
     /*read in size of matrix*/
     fscanf(fp, "%d", &size);
-    printf("size: %d\n",size);
-    num_local_elements = size/np;
-    lo = size - np*num_local_elements;
+    printf("Matrix Size: %d\n",size);
+    num_local_elements = size*size/np;
+    lo = size*size - np*num_local_elements;
+    printf("Number of processes: %d\n",np);
+    printf("Number of local elements: %d\n",num_local_elements);
 
 
     //parse adjacency matrix -> zeroes are converted to 'infinity'
@@ -52,28 +56,44 @@ int main(int argc,char* argv[]) {
 
   //------------ADJUST ROOT TO INCLUDE LEFTOVERS------
   if (pid == 0) {
+    global_index = 0;
     num_local_elements += lo;
     sub_array = malloc(sizeof(int) * (num_local_elements));
     for (int j=0;j<num_local_elements;j++){
       sub_array[j] = matrix[j];
     }
   }
-
+  printf("Process %d has %d elements starting at index %d\n",pid,num_local_elements,global_index);
+  char buf[20];
+  snprintf(buf, 20, "BEFORE_sub_array_%d", pid); // puts string into buffer
+  print_int_array(sub_array,num_local_elements,buf);
 
 
   //---------------GET k Row and Column-------------
+  int *k_row = malloc(sizeof(int) * size);
+  int *k_col = malloc(sizeof(int) * size);
   if (pid == 0) {
     k_row = get_k_row(matrix,size,0);
     k_col = get_k_col(matrix,size,0);
+    print_int_array(k_row,size,"k_row");
+    print_int_array(k_col,size,"k_col");
   }
+
+
   MPI_Bcast(k_row, size, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(k_col, size, MPI_INT, 0, MPI_COMM_WORLD);
 
   //--------------RUN ALGORITHMN ON SUBARRAY-----------
+
   sub_array = update_local_array(sub_array, global_index, num_local_elements, 0, k_col, k_row, size);
-  char buf[12];
-  snprintf(buf, 12, "sub_array_%d", pid); // puts string into buffer
+  snprintf(buf, 20, "AFTER_sub_array_%d", pid); // puts string into buffer
   print_int_array(sub_array,num_local_elements,buf);
+
+
+
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Finalize();
 }
 
 
