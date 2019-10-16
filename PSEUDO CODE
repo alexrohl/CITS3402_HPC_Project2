@@ -1,40 +1,40 @@
-read matrix
-get size
-
-convert zeros to infinity
-
-convert diagonals to zeroes
-
-np <- number of processes
+$mpirun --hostfile hostfile -np 5 ./main
 
 --- MASTER PROCESS ---
-Split array into np pieces
+read matrix
+get size
+convert zeros to infinity
+convert diagonals to zeroes
+----------------------
 
-for node in range(np):
-    SEND to slave:
-        global_index
-        sub_array (MPI_SCATTER?)
-        num_local_elements
+MPI_Bcast
+  size
 
+np <- number of processes
+num_local_elements <- local number of elements = size/np
+lo <- remaining elements after splitting = size - num*np
+
+SCATTER matrix to sub_array
+global_index = lo + np*pid
+
+
+--- MASTER PROCESS ---
 get kth_row <- row 0
 get kth_col <- column 0
+global_index = 0
+num_local_elements += lo #master process will hold the left_overs in addition to its sub_array
+sub_array append first lo elements to front
+----------------------
 
---- SLAVE PROCESS ---
-RECEIVE from master:
-    global_index
-    sub_array
-    num_local_elements
+MPI_Bcast
+    kth_row
+    kth_col
 
 for iteration (k) in range(size):
-    --- MASTER PROCESS ---
     BROADCAST to slave:
         kth_row
         kth_col
 
-    --- SLAVE PROCESS ---
-    RECEIVE from master:
-        kth_row
-        kth_col
 
     for local_index in range(num_local_elements):
         ### we compute A[i][j] = min(A[i][j], A[i][k] + A[k][j]) as follows###
