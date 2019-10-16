@@ -53,16 +53,15 @@ int main(int argc,char* argv[]) {
   //print_int_array(sub_array,elements_per_proc,"sub array");
   printf("\n");
 
-  MPI_Gather(sub_array, elements_per_proc, MPI_INT, rbuf, elements_per_proc, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Gather(sub_array, elements_per_proc, MPI_INT, result, elements_per_proc, MPI_INT, 0, MPI_COMM_WORLD);
 
   if (pid == 0) {
     print_int_array(rbuf, size, "full array remerged");
     //free(rbuf);
     //free(array);
   }
-  free(rbuf);
   free(array);
   free(sub_array);
   // cleans up all MPI state before exit of process
-  MPI_Finalize();
+  //MPI_Finalize();
 }

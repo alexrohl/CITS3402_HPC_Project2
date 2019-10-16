@@ -73,24 +73,25 @@ void MPI_SendAll(int index, int* matrix, int elements_per_process, int i) {
 
 //Now we've received the elements, we want to update the array locally and send relevant information for the next processes
 int * update_local_array(int* local_array, int index_received, int n_elements, int k, int* k_col, int* k_row, int size) {
+  //printf("local_function_call");
   assert(k==0);
   assert(index_received<=size*size);
   assert(n_elements<=size*size);
 
   int global_index,i,j;
   int ind = 0;
-  print_int_array(k_col,size,"k_col");
-  print_int_array(k_row,size,"k_row");
+  //print_int_array(k_col,size,"k_col");
+  //print_int_array(k_row,size,"k_row");
   //build: [row/column index value]
 
 
   //loop through local array
-  for (global_index=index_received;global_index<n_elements;global_index++) {
+  for (global_index=index_received;global_index<index_received+n_elements;global_index++) {
     i = global_index/size;
     j = global_index%size;
-    printf("BEFORE i: %d, j: %d, val: %d\n",i,j,local_array[ind]);
+    //printf("BEFORE i: %d, j: %d, val: %d\n",i,j,local_array[ind]);
     local_array[ind] = min(local_array[ind], k_col[i] + k_row[j]);
-    printf("AFTER i: %d, j: %d, val: %d\n",i,j,local_array[ind]);
+    //printf("AFTER i: %d, j: %d, val: %d\n",i,j,local_array[ind]);
     ind++;
     /*
     //checks if we have an element that needs to be sent to master to build k_row/k_col

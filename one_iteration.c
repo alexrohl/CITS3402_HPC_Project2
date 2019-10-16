@@ -9,7 +9,7 @@
 
 int main(int argc,char* argv[]) {
   int pid,np,size,lo,num_local_elements; //lo: left overs
-  int *matrix;
+  int *matrix,*leftovers;
 
   // ---INITIALIZE MPI---
   MPI_Init(&argc, &argv);
@@ -18,7 +18,7 @@ int main(int argc,char* argv[]) {
 
   // master process to get input matrix
   if (pid == 0) {
-    char filename[100] = "examples/4.txt";
+    char filename[100] = "examples/16.txt";
     FILE *fp = fopen(filename, "r");
 
     /*read in size of matrix*/
@@ -52,10 +52,10 @@ int main(int argc,char* argv[]) {
   int *sub_array = malloc(sizeof(int) * num_local_elements);
   MPI_Scatter(&matrix[lo], num_local_elements, MPI_INT, sub_array,
               num_local_elements, MPI_INT, 0, MPI_COMM_WORLD);
-  int global_index = lo + np*pid;
+  int global_index = lo + num_local_elements*pid;
 
   //------------ADJUST ROOT TO INCLUDE LEFTOVERS------
-  if (pid == 0) {
+  /*if (pid == 0) {
     global_index = 0;
     num_local_elements += lo;
     sub_array = malloc(sizeof(int) * (num_local_elements));
@@ -63,13 +63,12 @@ int main(int argc,char* argv[]) {
       sub_array[j] = matrix[j];
     }
   }
+  */
   printf("Process %d has %d elements starting at index %d\n",pid,num_local_elements,global_index);
-  char buf[20];
-  snprintf(buf, 20, "BEFORE_sub_array_%d", pid); // puts string into buffer
-  print_int_array(sub_array,num_local_elements,buf);
 
 
   //---------------GET k Row and Column-------------
+  char buf[20];
   int *k_row = malloc(sizeof(int) * size);
   int *k_col = malloc(sizeof(int) * size);
   if (pid == 0) {
@@ -77,20 +76,57 @@ int main(int argc,char* argv[]) {
     k_col = get_k_col(matrix,size,0);
     print_int_array(k_row,size,"k_row");
     print_int_array(k_col,size,"k_col");
-  }
 
+  }
 
   MPI_Bcast(k_row, size, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(k_col, size, MPI_INT, 0, MPI_COMM_WORLD);
 
+  /*
+  snprintf(buf, 20, "k_row_%d", pid); // puts string into buffer
+  print_int_array(k_row,size,buf);
+  snprintf(buf, 20, "k_col_%d", pid); // puts string into buffer
+  print_int_array(k_col,size,buf);
+  */
+
   //--------------RUN ALGORITHMN ON SUBARRAY-----------
+  if(pid==0) {
+    if (lo>0) {
+      //run on leftovers
+      leftovers = malloc(sizeof(int)*lo);
+      for (int i=0;i<lo;i++) {
+        leftovers[i] = matrix[i];
+      }
+      snprintf(buf, 20, "BEFORE_sub_array_%d", -1); // puts string into buffer
+      print_int_array(leftovers,lo,buf);
+      leftovers = update_local_array(leftovers, 0, lo, 0, k_col, k_row, size);
+      snprintf(buf, 20, "AFTER_sub_array_%d", -1); // puts string into buffer
+      print_int_array(leftovers,lo,buf);
+    }
+  }
+
+  snprintf(buf, 20, "BEFORE_sub_array_%d", pid); // puts string into buffer
+  print_int_array(sub_array,num_local_elements,buf);
 
   sub_array = update_local_array(sub_array, global_index, num_local_elements, 0, k_col, k_row, size);
+
   snprintf(buf, 20, "AFTER_sub_array_%d", pid); // puts string into buffer
   print_int_array(sub_array,num_local_elements,buf);
 
+  int* result = malloc(sizeof(int) * np * num_local_elements);
+  MPI_Gather(sub_array, num_local_elements, MPI_INT, result, num_local_elements, MPI_INT, 0, MPI_COMM_WORLD);
 
+  if (pid==0) {
+    if (lo>0) {
+      print_int_array(leftovers,lo,"RESULT1");
+    }
+    print_int_array(result,np * num_local_elements,"RESULT2");
 
+    //free(matrix);
+    //free(result);
+
+  }
+  //free(sub_array);
 
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
@@ -112,19 +148,14 @@ int main(int argc,char* argv[]) {
         MPI_Scatter(matrix, elements_per_process,  MPI_INT,
                     &a2, elements_per_process,  MPI_INT,
                     0, MPI_COMM_WORLD)
-
-
         for (i = 1; i < np - 1; i++) {
             index = i * elements_per_process;
-
             MPI_SendAll(index, matrix, elements_per_process, i);
-
         }
         // last process takes the remaining elements
         index = i * elements_per_process;
         int elements_left = n - index;
         MPI_SendAll(index, matrix, elements_left, i);
-
     }
     // slave processes
     else {
@@ -132,24 +163,17 @@ int main(int argc,char* argv[]) {
                1, MPI_INT, 0, 0,
                MPI_COMM_WORLD,
                &status);
-
       }
-
   int k =0;
   int* k_row = get_k_row(matrix,size,k);
   int* k_col = get_k_col(matrix,size,k);
-
   //--------------------------Loop accross iterations--------------------------
   //for (k=0;k<size;k++) {
-
-
     // master process
     if (pid == 0) {
       //BROADCAST k_row and k_col
       MPI_Bcast(k_row, size, MPI_INT, 0, MPI_COMM_WORLD);
       MPI_Bcast(k_col, size, MPI_INT, 0, MPI_COMM_WORLD);
-
-
       a2 = update_local_array(a2, index_received, n_elements_received, k, k_col, k_row, size);
       //builds k_row and k_column
       for(update=0;update<2*size;update) {
@@ -160,8 +184,6 @@ int main(int argc,char* argv[]) {
     else {
       a2 = update_local_array(a2, index_received, n_elements_received, k, k_col, k_row, size);
     }
-
-
   //prints pairwise shortest path result
   printf("\nresult\n");
   for (i = 0; i <  size; i++) {
@@ -171,7 +193,6 @@ int main(int argc,char* argv[]) {
     }
     printf("\n");
   }
-
   return 0;
 }
 */
