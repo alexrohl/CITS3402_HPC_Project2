@@ -132,3 +132,27 @@ MPI_Recv(&a2, n_elements_recieved,
          &status);
 
 */
+
+void print_matrix(int * matrix, int size) {//prints adjacency matrix
+  for (int i = 0; i <  size; i++) {
+    printf("row%d: ",i);
+    for (int j = 0; j < size; j++) {
+       printf("%d ", matrix[i*size + j]);
+    }
+    printf("\n");
+  }
+}
+
+int * merge_scattered_arrays(int * matrix, int * leftovers, int lo, int* result, int size) {
+  //assert(matrix[lo] == result[0]);
+  if (lo > 0) {
+    for (int i=0;i<lo;i++) {
+      matrix[i] = leftovers[i];
+    }
+  }
+  for (int i=lo; i<size*size; i++) {
+    matrix[i] = result[i-lo];
+  }
+  assert(matrix[lo]==result[0]);
+  return matrix;
+}

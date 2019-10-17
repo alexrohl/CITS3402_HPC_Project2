@@ -10,7 +10,7 @@
 int main(int argc,char* argv[]) {
   int pid,np,size,lo,num_local_elements; //lo: left overs
   int *leftovers;
-  char filename[100] = "examples/4.txt";
+  char filename[100] = "examples/16.txt";
   FILE *fp;
   // ---INITIALIZE MPI---
   MPI_Init(&argc, &argv);
@@ -70,14 +70,6 @@ int main(int argc,char* argv[]) {
   */
   printf("Process %d has %d elements starting at index %d\n",pid,num_local_elements,global_index);
   char buf[20];
-  /*
-  snprintf(buf, 20, "k_row_%d", pid); // puts string into buffer
-  print_int_array(k_row,size,buf);
-  snprintf(buf, 20, "k_col_%d", pid); // puts string into buffer
-  print_int_array(k_col,size,buf);
-  */
-
-  //--------------RUN ALGORITHMN ON LEFTOVERS-----------
   if(pid==0) {
     if (lo>0) {
       //run on leftovers
@@ -85,36 +77,56 @@ int main(int argc,char* argv[]) {
       for (int i=0;i<lo;i++) {
         leftovers[i] = matrix[i];
       }
-      snprintf(buf, 20, "BEFORE_sub_array_%d", -1); // puts string into buffer
-      print_int_array(leftovers,lo,buf);
-      for(int k = 0;k<size;k++) {
-        leftovers = update_local_array_with_matrix(leftovers, 0, lo, k, matrix, size);
-      }
-      snprintf(buf, 20, "AFTER_sub_array_%d", -1); // puts string into buffer
-      print_int_array(leftovers,lo,buf);
     }
   }
+  /*
+  snprintf(buf, 20, "k_row_%d", pid); // puts string into buffer
+  print_int_array(k_row,size,buf);
+  snprintf(buf, 20, "k_col_%d", pid); // puts string into buffer
+  print_int_array(k_col,size,buf);
+  */
 
-  //--------------RUN ALGORITHMN ON SUBARRAYS-----------
-  snprintf(buf, 20, "BEFORE_sub_array_%d", pid); // puts string into buffer
-  print_int_array(sub_array,num_local_elements,buf);
+  //--------------LOOPING OVER ITERATIONS--------------
   for(int k = 0;k<size;k++) {
+
+    //--------------RUN ALGORITHMN ON LEFTOVERS-----------
+    if(pid==0) {
+      if (lo>0) {
+        //run on leftovers
+        snprintf(buf, 20, "BEFORE_sub_array_%d", -1); // puts string into buffer
+        print_int_array(leftovers,lo,buf);
+        leftovers = update_local_array_with_matrix(leftovers, 0, lo, k, matrix, size);
+
+        snprintf(buf, 20, "AFTER_sub_array_%d", -1); // puts string into buffer
+        print_int_array(leftovers,lo,buf);
+      }
+    }
+
+    //--------------RUN ALGORITHMN ON SUBARRAYS-----------
+    snprintf(buf, 20, "BEFORE_sub_array_%d", pid); // puts string into buffer
+    print_int_array(sub_array,num_local_elements,buf);
     sub_array = update_local_array_with_matrix(sub_array, global_index, num_local_elements, k, matrix, size);
     snprintf(buf, 20, "AFTER_sub_array_%d", pid); // puts string into buffer
     print_int_array(sub_array,num_local_elements,buf);
+
+
+    //MPI_Barrier(MPI_COMM_WORLD);
+    int* result = malloc(sizeof(int) * np * num_local_elements);
+    MPI_Gather(sub_array, num_local_elements, MPI_INT, result, num_local_elements, MPI_INT, 0, MPI_COMM_WORLD);
+
+    if (pid==0) {
+      matrix = merge_scattered_arrays(matrix, leftovers, lo, result, size);
+    }
+    MPI_Bcast(matrix, size*size, MPI_INT, 0, MPI_COMM_WORLD);
+    //assert(matrix[lo])
+
   }
-  MPI_Barrier(MPI_COMM_WORLD);
 
 
-  int* result = malloc(sizeof(int) * np * num_local_elements);
-  MPI_Gather(sub_array, num_local_elements, MPI_INT, result, num_local_elements, MPI_INT, 0, MPI_COMM_WORLD);
+
 
   if (pid==0) {
-    if (lo>0) {
-      print_int_array(leftovers,lo,"RESULT1");
-    }
-    print_int_array(result,np * num_local_elements,"RESULT2");
-
+    print_matrix(matrix, size);
     //free(matrix);
     //free(result);
 
