@@ -43,7 +43,7 @@ int main(int argc,char* argv[]) {
   }
 
   //run algorithm
-  for (k=0;k<size;k++) {
+  for (k=0;k<1;k++) {
     for (i=0;i<size;i++) {
       for (j=0;j<size;j++) {
         A[i][j] = min(A[i][j], A[i][k] + A[k][j]);

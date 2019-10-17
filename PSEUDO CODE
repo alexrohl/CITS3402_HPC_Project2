@@ -1,0 +1,72 @@
+$mpirun --hostfile hostfile -np 5 ./main
+
+--- MASTER PROCESS ---
+read matrix
+get size
+convert zeros to infinity
+convert diagonals to zeroes
+----------------------
+
+MPI_Bcast
+  size
+
+np <- number of processes
+num_local_elements <- local number of elements = size/np
+lo <- remaining elements after splitting = size - num*np
+
+SCATTER matrix to sub_array
+global_index = lo + np*pid
+
+
+--- MASTER PROCESS ---
+get kth_row <- row 0
+get kth_col <- column 0
+get leftovers <- matrix[0:lo]
+----------------------
+
+MPI_Bcast
+    kth_row
+    kth_col
+
+for iteration (k) in range(size):
+    BROADCAST to slave:
+        kth_row
+        kth_col
+
+
+    for local_index in range(num_local_elements):
+        ### we compute A[i][j] = min(A[i][j], A[i][k] + A[k][j]) as follows###
+        global row (i) <- (global_index + local_index)/size
+        global col (j) <- (global_index + local_index)%size
+        sub_array[local_index] = min(sub_array[local_index], kth_col[i] + kth_row[j])
+
+        ### If element needs to be passed to build (k+1)row/col ###
+        if i == k+1:
+            #found row element
+            SEND to master
+                [0 j sub_array[local_index]] #0 means row elem
+
+        if j == k+1:
+            #found col element
+            SEND to master
+                [1 i sub_array[local_index]] #1 means col elem
+
+    --- MASTER PROCESS ---
+    #building the next row/col to be broadcasted
+    for node in range(np):
+        RECEIVE from slave[node]
+            [isCol index value]
+
+        if isCol:
+            kth_col[index] = value
+        else:
+            kth_col[index] = value
+
+
+#iterations complete so now merge sub arrays into one array
+--- MASTER PROCESS ---
+MPI_GATHER?
+  sub_array
+
+
+Print(resulting array)
