@@ -70,13 +70,16 @@ void MPI_SendAll(int index, int* matrix, int elements_per_process, int i) {
 
 }
 
-
 //Now we've received the elements, we want to update the array locally and send relevant information for the next processes
-int * update_local_array(int* local_array, int index_received, int n_elements, int k, int* k_col, int* k_row, int size) {
+int * update_local_array_with_matrix(int* local_array, int index_received, int n_elements, int k, int* matrix, int size) {
   //printf("local_function_call");
-  assert(k==0);
   assert(index_received<=size*size);
   assert(n_elements<=size*size);
+  if (k==0) {
+    for (int i=0;i<n_elements;i++) {
+      assert(matrix[index_received+i] == local_array[i]);
+    }
+  }
 
   int global_index,i,j;
   int ind = 0;
@@ -89,31 +92,13 @@ int * update_local_array(int* local_array, int index_received, int n_elements, i
   for (global_index=index_received;global_index<index_received+n_elements;global_index++) {
     i = global_index/size;
     j = global_index%size;
-    //printf("BEFORE i: %d, j: %d, val: %d\n",i,j,local_array[ind]);
-    local_array[ind] = min(local_array[ind], k_col[i] + k_row[j]);
-    //printf("AFTER i: %d, j: %d, val: %d\n",i,j,local_array[ind]);
+    assert(i*size+k<size*size);
+    assert(k*size+j<size*size);
+    local_array[ind] = min(local_array[ind], matrix[i*size+k] + matrix[k*size+j]);
+    // we compute A[i][j] = min(A[i][j], A[i][k] + A[k][j]) as follows###
+
     ind++;
-    /*
-    //checks if we have an element that needs to be sent to master to build k_row/k_col
-    if (i==k+1) {
-      int build[3] = {0,j,a2[ind]};
-      MPI_Send(build,
-               3,
-               MPI_INT, 0, 0,
-               MPI_COMM_WORLD);
-    }
 
-    //checks if we have an element that needs to be sent to master to build k_row/k_col
-    if (i==k+1) {
-      int build[3] = {0,0,0};//{0,i,a2[ind]};
-      MPI_Send(build,
-               3,
-               MPI_INT, 0, 0,
-               MPI_COMM_WORLD);
-    }
-
-  }
-  */
   }
   return local_array;
 }

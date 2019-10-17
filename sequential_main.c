@@ -13,7 +13,7 @@ int min(int a, int b) {
 
 
 int main(int argc,char* argv[]) {
-  char filename[100] = "examples/16.txt";
+  char filename[100] = "examples/4.txt";
   FILE *fp = fopen(filename, "r");
   int size;
 
@@ -33,21 +33,23 @@ int main(int argc,char* argv[]) {
     }
   }
 
-  //prints adjacency matrix
-  for (i = 0; i <  size; i++) {
-    printf("row%d: ",i);
-    for (j = 0; j < size; j++) {
-       printf("%d ", A[i][j]);
-    }
-    printf("\n");
-  }
+
 
   //run algorithm
-  for (k=0;k<1;k++) {
+  for (k=0;k<size;k++) {
     for (i=0;i<size;i++) {
       for (j=0;j<size;j++) {
         A[i][j] = min(A[i][j], A[i][k] + A[k][j]);
       }
+    }
+
+    //prints adjacency matrix
+    for (i = 0; i <  size; i++) {
+      printf("row%d: ",i);
+      for (j = 0; j < size; j++) {
+         printf("%d ", A[i][j]);
+      }
+      printf("\n");
     }
   }
 
