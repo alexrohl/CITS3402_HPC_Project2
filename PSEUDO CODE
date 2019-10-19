@@ -1,38 +1,71 @@
 $mpirun --hostfile hostfile -np 5 ./main
 
+np <- number of processes
+
 --- MASTER PROCESS ---
+read matrix size
+
+size <- matrix size
+num_local_elements <- local number of elements = size/np
+lo <- remaining elements after splitting = size - num*np
+
 read matrix
-get size
 convert zeros to infinity
 convert diagonals to zeroes
 ----------------------
 
-MPI_Bcast
-  size
+MPI_Bcast size
+MPI_Bcast num_local_elements
+MPI_Bcast lo
 
-np <- number of processes
-num_local_elements <- local number of elements = size/np
-lo <- remaining elements after splitting = size - num*np
-
-SCATTER matrix to sub_array
 global_index = lo + np*pid
+SCATTER matrix to sub_array
 
 
 --- MASTER PROCESS ---
-get kth_row <- row 0
-get kth_col <- column 0
 get leftovers <- matrix[0:lo]
 ----------------------
 
-MPI_Bcast
-    kth_row
-    kth_col
+MPI_Bcast matrix
 
 for iteration (k) in range(size):
-    BROADCAST to slave:
-        kth_row
-        kth_col
 
+    for local_index in range(num_local_elements):
+        i (global row) <- (global_index + local_index)/size
+        j (global col) <- (global_index + local_index)%size
+        sub_array[local_index] = min(sub_array[local_index], matrix[i*size+k] + matrix[k*size+j])
+
+
+    --- MASTER PROCESS ---
+    for local_index in range(lo):
+        i (global row) <- (global_index + local_index)/size
+        j (global col) <- (global_index + local_index)%size
+        leftovers[local_index] = min(leftovers[local_index], matrix[i*size+k] + matrix[k*size+j])
+    ----------------------
+
+    GATHER sub_array into matrix
+    matrix append leftovers to front
+
+    MPI_Bcast matrix
+
+print matrix
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//ignore this...
 
     for local_index in range(num_local_elements):
         ### we compute A[i][j] = min(A[i][j], A[i][k] + A[k][j]) as follows###
