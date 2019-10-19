@@ -48,7 +48,7 @@ int main(int argc,char* argv[]) {
       matrix = matrix_container.matrix;
       int i,j,k;
       //prints adjacency matrix
-      print_matrix(matrix,size);
+      //print_matrix(matrix,size);
     }
 
 
@@ -108,9 +108,21 @@ int main(int argc,char* argv[]) {
 
     //--------------PRINT RESULT--------------
     if (pid==0) {
-      print_matrix(matrix, size);
-      free(matrix);
+      //LOGGING
+      //Create File Name
+      printf("logging...");
+      time_t t = time(NULL);
+      struct tm tm = *localtime(&t);
+      char output[50];
+      sprintf(output,"outputs/%dvertices_%d%d%d_%d%d_%dprocesses.out",size,tm.tm_mday,tm.tm_mon + 1, tm.tm_year + 1900,tm.tm_hour,tm.tm_min,np);
+      FILE* fp = fopen(output, "w");
+      print_matrix(matrix, size, fp);
+      fclose(fp);
+      printf("done\n");
+
+
       //free(result);
+      free(matrix);
     }
     free(sub_array);
 

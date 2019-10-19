@@ -135,13 +135,14 @@ MPI_Recv(&a2, n_elements_recieved,
 
 */
 
-void print_matrix(int * matrix, int size) {//prints adjacency matrix
+void print_matrix(int * matrix, int size, FILE *fp) {//prints adjacency matrix
+  fprintf(fp,"%d\n",size);
   for (i = 0; i <  size; i++) {
-    printf("row%d: ",i);
+    //fprintf("row%d: ",i);
     for (j = 0; j < size; j++) {
-       printf("%d ", matrix[i*size + j]);
+       fprintf(fp,"%d ", matrix[i*size + j]);
     }
-    printf("\n");
+    //printf("\n");
   }
 }
 
