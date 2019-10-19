@@ -8,7 +8,7 @@
 
 
 int main(int argc,char* argv[]) {
-  int i, j, k;
+
   if(argc==1)
         printf("\nNo Extra Command Line Argument Passed Other Than Program Name");
   if(argc>=2)
@@ -35,26 +35,22 @@ int main(int argc,char* argv[]) {
       printf("Number of local elements: %d\n",num_local_elements);
     }
 
-  //---------------PARTITION MATRIX------------------
-  MPI_Bcast(matrix, size*size, MPI_INT, 0, MPI_COMM_WORLD);
-  int *sub_array = malloc(sizeof(int) * num_local_elements);
-  MPI_Scatter(&matrix[lo], num_local_elements, MPI_INT, sub_array,
-              num_local_elements, MPI_INT, 0, MPI_COMM_WORLD);
-  int global_index = lo + num_local_elements*pid;
-  printf("Process %d has %d elements starting at index %d\n",pid,num_local_elements,global_index);
+    //-----------BROADCAST SIZES---------------
+    MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&num_local_elements, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&lo, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    int *matrix = malloc(sizeof(int) * size*size);
 
-  //-------------SEND LEFT OVERS TO ROOT-------------
-  char buf[20];
-  if(pid==0) {
-    if (lo>0) {
-      leftovers = malloc(sizeof(int)*lo);
-      for (i=0;i<lo;i++) {
-        leftovers[i] = matrix[i];
-      }
+    //------get input matrix---------
+    if (pid == 0) {
+      //parse adjacency matrix (zeroes are converted to 'infinity')
+      MatrixContainer matrix_container = get_Matrix(argv[1],size);
+      matrix = matrix_container.matrix;
+      int i,j,k;
+      //prints adjacency matrix
+      print_matrix(matrix,size);
     }
 
-  //--------------LOOPING OVER ITERATIONS--------------
-  for(k = 0;k<size;k++) {
 
     //---------------PARTITION MATRIX------------------
     MPI_Bcast(matrix, size*size, MPI_INT, 0, MPI_COMM_WORLD);
