@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <assert.h>
 
+int i, j, k;
+
 void print_int_array(int * arr, int len, char name[64]) {
     printf("Array %s: [",name);
 
@@ -76,7 +78,7 @@ int * update_local_array_with_matrix(int* local_array, int index_received, int n
   assert(index_received<=size*size);
   assert(n_elements<=size*size);
   if (k==0) {
-    for (int i=0;i<n_elements;i++) {
+    for (i=0;i<n_elements;i++) {
       assert(matrix[index_received+i] == local_array[i]);
     }
   }
@@ -134,9 +136,9 @@ MPI_Recv(&a2, n_elements_recieved,
 */
 
 void print_matrix(int * matrix, int size) {//prints adjacency matrix
-  for (int i = 0; i <  size; i++) {
+  for (i = 0; i <  size; i++) {
     printf("row%d: ",i);
-    for (int j = 0; j < size; j++) {
+    for (j = 0; j < size; j++) {
        printf("%d ", matrix[i*size + j]);
     }
     printf("\n");
@@ -146,11 +148,11 @@ void print_matrix(int * matrix, int size) {//prints adjacency matrix
 int * merge_scattered_arrays(int * matrix, int * leftovers, int lo, int* result, int size) {
   //assert(matrix[lo] == result[0]);
   if (lo > 0) {
-    for (int i=0;i<lo;i++) {
+    for (i=0;i<lo;i++) {
       matrix[i] = leftovers[i];
     }
   }
-  for (int i=lo; i<size*size; i++) {
+  for (i=lo; i<size*size; i++) {
     matrix[i] = result[i-lo];
   }
   assert(matrix[lo]==result[0]);
