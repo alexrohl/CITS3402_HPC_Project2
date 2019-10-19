@@ -3,18 +3,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include<omp.h>
+#include <mpi.h>
+#include<time.h>
 #define INFINITY 100000000
 
 #define MAX_LINE_LEN 256
 struct MatrixContainer {
   int size;
   int * matrix;
+  double time;
 };
 
 typedef struct MatrixContainer MatrixContainer;
 
 MatrixContainer get_Matrix(char *filename, int size)
 {
+    double t = MPI_Wtime();
     MatrixContainer Result;
     //double t = omp_get_wtime();
     //build rows
@@ -22,19 +27,21 @@ MatrixContainer get_Matrix(char *filename, int size)
     //matrix = malloc(sizeof(int)*size);
 
 
-    FILE *fp = fopen(filename, "r"); /* should check the result */
+    FILE *fp = fopen(filename, "rb"); /* should check the result */
     char type[MAX_LINE_LEN];
     int i_elem,i,j;
 
     /*read in size of matrix*/
-    fscanf(fp, "%d", &i_elem);
-    /* already know this... */
+    fread(&i_elem, sizeof(int), 1, fp);    /* already know this... */
+    printf("SIZE %d \n",i_elem);
+
     for (i=0; i<size; i++) {
       for (j=0; j<size; j++) {
 
         /*read element*/
-        fscanf(fp,"%d", &i_elem);
-
+        //fscanf(fp,"%d", &i_elem);
+        fread(&i_elem, sizeof(int), 1, fp);
+        //printf("%d ",i_elem);
         //diagonal values will be zero
         if (i==j) {
           i_elem = 0;
@@ -43,12 +50,14 @@ MatrixContainer get_Matrix(char *filename, int size)
         } else if (i_elem == 0) {
           i_elem = INFINITY;
         }
-        
+
         matrix[i*size + j] = i_elem;
       }
     }
     Result.size = size;
     Result.matrix = matrix;
+    double time_taken = MPI_Wtime() - t;
+    Result.time = time_taken;
     return Result;
 }
 
