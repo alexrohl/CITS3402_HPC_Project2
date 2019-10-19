@@ -8,7 +8,7 @@
 
 
 int main(int argc,char* argv[]) {
-
+  int i, j, k;
   if(argc==1)
         printf("\nNo Extra Command Line Argument Passed Other Than Program Name");
   if(argc>=2)
@@ -52,6 +52,7 @@ int main(int argc,char* argv[]) {
     }
 
 
+    double t_start = MPI_Wtime();
     //---------------PARTITION MATRIX------------------
     MPI_Bcast(matrix, size*size, MPI_INT, 0, MPI_COMM_WORLD);
     int *sub_array = malloc(sizeof(int) * num_local_elements);
@@ -65,14 +66,14 @@ int main(int argc,char* argv[]) {
     if(pid==0) {
       if (lo>0) {
         leftovers = malloc(sizeof(int)*lo);
-        for (int i=0;i<lo;i++) {
+        for (i=0;i<lo;i++) {
           leftovers[i] = matrix[i];
         }
       }
     }
 
     //--------------LOOPING OVER ITERATIONS--------------
-    for(int k = 0;k<size;k++) {
+    for(k = 0;k<size;k++) {
 
       //--------------RUN ALGORITHMN ON LEFTOVERS-----------
       if(pid==0) {
@@ -120,7 +121,8 @@ int main(int argc,char* argv[]) {
       fclose(fp);
       printf("done\n");
 
-
+      double runtime = MPI_Wtime() - t_start;
+      printf("Time taken is %f seconds\n", runtime);
       //free(result);
       free(matrix);
     }
