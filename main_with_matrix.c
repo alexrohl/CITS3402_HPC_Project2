@@ -72,6 +72,8 @@ int main(int argc,char* argv[]) {
       }
     }
 
+
+
     //--------------LOOPING OVER ITERATIONS--------------
     for(k = 0;k<size;k++) {
 
@@ -88,10 +90,10 @@ int main(int argc,char* argv[]) {
 
       //--------------RUN ALGORITHMN ON SUBARRAYS-----------
       snprintf(buf, 20, "BEFORE_sub_array_%d", pid); // puts string into buffer
-      print_int_array(sub_array,num_local_elements,buf);
+      //print_int_array(sub_array,num_local_elements,buf);
       sub_array = update_local_array_with_matrix(sub_array, global_index, num_local_elements, k, matrix, size);
       snprintf(buf, 20, "AFTER_sub_array_%d", pid); // puts string into buffer
-      print_int_array(sub_array,num_local_elements,buf);
+      //print_int_array(sub_array,num_local_elements,buf);
 
       MPI_Barrier(MPI_COMM_WORLD);
       int* result = malloc(sizeof(int) * np * num_local_elements);

@@ -4,21 +4,13 @@
 #include<omp.h>
 #include<time.h>
 #include "parse_input.c"
+#include"helper_functions.c"
 #include <mpi.h>
-
-int min(int a, int b) {
-  if (a<b) {
-    return a;
-  } else {
-    return b;
-  }
-}
-
 
 int main(int argc,char* argv[]) {
   for (int i=0; i<5; i++) {
   //MPI_Init(&argc, &argv);
-  char filename[100] = "examples/32.in";
+  char filename[100] = "examples/16.in";
   FILE *fp = fopen(filename, "rb");
   int size;
 
@@ -32,7 +24,7 @@ int main(int argc,char* argv[]) {
   int i,j,k;
 
 
-  double t = MPI_Wtime();
+  double time_taken = MPI_Wtime();
   //size is array dimension
   //run algorithm
   for (k=0;k<size;k++) {
@@ -42,8 +34,31 @@ int main(int argc,char* argv[]) {
       }
     }
   }
-    double time_taken = MPI_Wtime() - t;
-    printf("Time taken to run algorithm: %f\n",time_taken);
+
+
+  //LOGGING
+  //Create File Name
+  printf("logging...");
+  time_t t = time(NULL);
+  struct tm tm = *localtime(&t);
+  char output[60];
+  sprintf(output,"outputs/%dvertices_%d%d%d_%d%d_1processes_SEQ.out",size,tm.tm_mday,tm.tm_mon + 1, tm.tm_year + 1900,tm.tm_hour,tm.tm_min);
+  fp = fopen(output, "w");
+  print_matrix_to_file(matrix, size, fp);
+  fclose(fp);
+  printf("done\n");
+
+  double runtime = MPI_Wtime() - time_taken;
+  printf("Time taken is %f seconds\n", runtime);
+  //free(result);
+  free(matrix);
+
+
+    //double time_taken = MPI_Wtime() - t;
+    //printf("Time taken to run algorithm: %f\n",time_taken);
+
+
+
     /*
     //prints adjacency matrix
     for (i = 0; i <  size; i++) {

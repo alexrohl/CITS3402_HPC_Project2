@@ -7,6 +7,21 @@
 
 int i, j, k;
 
+int * append_int_to_array(int *arr1, int val1, int index){
+  int* temp;
+  /*append to values*/
+  arr1[index]=val1;
+  temp=realloc(arr1,(index+2)*sizeof(int));
+  /*using temp*/
+  if ( temp != NULL ) {
+    arr1=temp;
+  } else {
+    free(arr1);
+    printf("Error allocating memory!\n");
+  }
+  return arr1;
+}
+
 void print_int_array(int * arr, int len, char name[64]) {
     printf("Array %s: [",name);
 
@@ -18,9 +33,9 @@ void print_int_array(int * arr, int len, char name[64]) {
     return;
 }
 //assume 1D matrix...
-int* get_k_row(int* matrix, int size, int k) {
+int* get_k_row(int* row, int* matrix, int size, int k) {
   //printf("%d row ",k);
-  int *row = malloc(size*sizeof(int));
+  //int *row = malloc(size*sizeof(int));
   int i,j;
   j=0;
   for (i=k*size ; i < (k+1)*size ; i++) {
@@ -33,9 +48,9 @@ int* get_k_row(int* matrix, int size, int k) {
 }
 
 //assume 1D matrix...
-int* get_k_col(int* matrix, int size, int k) {
+int* get_k_col(int* col, int* matrix, int size, int k) {
   //printf("%d col ",k);
-  int *col = malloc(size*sizeof(int));
+  //int *col = malloc(size*sizeof(int));
   int i,j;
   j=0;
   for (i=k; i < size*size ; i+=size) {
@@ -105,20 +120,73 @@ int * update_local_array_with_matrix(int* local_array, int index_received, int n
   return local_array;
 }
 
-int * append_int_to_array(int *arr1, int val1, int index){
-  int* temp;
-  /*append to values*/
-  arr1[index]=val1;
-  temp=realloc(arr1,(index+2)*sizeof(int));
-  /*using temp*/
-  if ( temp != NULL ) {
-    arr1=temp;
-  } else {
-    free(arr1);
-    printf("Error allocating memory!\n");
+struct LocalData {
+  int * local_array;
+  int * next_krow;
+  int next_krow_size;
+  int * next_kcol;
+  int next_kcol_size;
+};
+
+typedef struct LocalData LocalData;
+
+
+//Now we've received the elements, we want to update the array locally and send relevant information for the next processes
+LocalData update_local_array_with_k(LocalData local_data, int index_received, int n_elements, int k, int* krow, int* kcol, int size) {
+  //printf("local_function_call");
+  int* next_row;
+  int* next_col;
+  int next_row_size = 0;
+  int next_col_size = 0;
+  next_row = malloc(sizeof(int));
+  next_col = malloc(sizeof(int));
+
+  assert(index_received<=size*size);
+  assert(n_elements<=size*size);
+
+  int global_index,i,j;
+  int ind = 0;
+  //print_int_array(k_col,size,"k_col");
+  //print_int_array(k_row,size,"k_row");
+  //build: [row/column index value]
+
+
+  //loop through local array
+  for (global_index=index_received;global_index<index_received+n_elements;global_index++) {
+    i = global_index/size;
+    j = global_index%size;
+    assert(i*size+k<size*size);
+    assert(k*size+j<size*size);
+    local_data.local_array[ind] = min(local_data.local_array[ind], kcol[i] + krow[j]);
+    // we compute A[i][j] = min(A[i][j], A[i][k] + A[k][j]) as follows###
+
+    if (k<size-1) {
+      if (i==k+1) {
+        //found element in next row
+        next_row = append_int_to_array(next_row, local_data.local_array[ind],next_row_size);
+        next_row_size++;
+      }
+      if (j==k+1) {
+        //found element in next col
+        next_col = append_int_to_array(next_col, local_data.local_array[ind],next_col_size);
+        next_col_size++;
+      }
+
+    }
+  ind++;
   }
-  return arr1;
+  //printf("returning...\n");
+  local_data.next_krow = next_row;
+  //printf("num row: %d",next_row_size);
+  local_data.next_krow_size = next_row_size;
+  local_data.next_kcol = next_col;
+  //printf("num col: %d",next_col_size);
+  local_data.next_kcol_size = next_col_size;
+  //printf("function done\n");
+  return local_data;
 }
+
+
 /*
 MPI_Recv(&index_received,
          1, MPI_INT, 0, 0,
@@ -140,6 +208,16 @@ void print_matrix_to_file(int * matrix, int size, FILE *fp) {//prints adjacency 
        fprintf(fp,"%d ", matrix[i*size + j]);
     }
     //printf("\n");
+  }
+}
+
+void print_matrix(int * matrix, int size) {//prints adjacency matrix
+  for (i = 0; i <  size; i++) {
+    printf("row%d: ",i);
+    for (j = 0; j < size; j++) {
+       printf("%d ", matrix[i*size + j]);
+    }
+    printf("\n");
   }
 }
 
