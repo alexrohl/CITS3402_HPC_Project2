@@ -31,7 +31,6 @@ MatrixContainer get_Matrix(char *filename, int size)
 
     for (i = 0; i < size; i++) {
       for (j = 0; j < size; j++) {
-
         /*read element*/
         fread(&i_elem, sizeof(int), 1, fp);
         //diagonal values will be zero
@@ -41,7 +40,6 @@ MatrixContainer get_Matrix(char *filename, int size)
         } else if (i_elem == 0) {
           i_elem = INFINITY;
         }
-
         matrix[i*size + j] = i_elem;
       }
     }
