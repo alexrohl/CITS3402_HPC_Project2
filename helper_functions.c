@@ -120,22 +120,19 @@ int * append_int_to_array(int *arr1, int val1, int index){
   return arr1;
 }
 /*
-
 MPI_Recv(&index_received,
          1, MPI_INT, 0, 0,
          MPI_COMM_WORLD,
          &status);
-
 // stores the received array segment
 // in local array a2
 MPI_Recv(&a2, n_elements_recieved,
          MPI_INT, 0, 0,
          MPI_COMM_WORLD,
          &status);
-
 */
 
-void print_matrix2(int * matrix, int size, FILE *fp) {//prints adjacency matrix
+void print_matrix_to_file(int * matrix, int size, FILE *fp) {//prints adjacency matrix
   fprintf(fp,"%d\n",size);
   for (i = 0; i <  size; i++) {
     //fprintf("row%d: ",i);

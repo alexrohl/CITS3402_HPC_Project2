@@ -55,12 +55,9 @@ int main(int argc,char* argv[]) {
     double t_start = MPI_Wtime();
     //---------------PARTITION MATRIX------------------
     MPI_Bcast(matrix, size*size, MPI_INT, 0, MPI_COMM_WORLD);
-
     int *sub_array = malloc(sizeof(int) * num_local_elements);
-
     MPI_Scatter(&matrix[lo], num_local_elements, MPI_INT, sub_array,
                 num_local_elements, MPI_INT, 0, MPI_COMM_WORLD);
-
     int global_index = lo + num_local_elements*pid;
     printf("Process %d has %d elements starting at index %d\n",pid,num_local_elements,global_index);
 
@@ -91,10 +88,10 @@ int main(int argc,char* argv[]) {
 
       //--------------RUN ALGORITHMN ON SUBARRAYS-----------
       snprintf(buf, 20, "BEFORE_sub_array_%d", pid); // puts string into buffer
-      //print_int_array(sub_array,num_local_elements,buf);
+      print_int_array(sub_array,num_local_elements,buf);
       sub_array = update_local_array_with_matrix(sub_array, global_index, num_local_elements, k, matrix, size);
       snprintf(buf, 20, "AFTER_sub_array_%d", pid); // puts string into buffer
-      //print_int_array(sub_array,num_local_elements,buf);
+      print_int_array(sub_array,num_local_elements,buf);
 
       MPI_Barrier(MPI_COMM_WORLD);
       int* result = malloc(sizeof(int) * np * num_local_elements);
@@ -103,6 +100,7 @@ int main(int argc,char* argv[]) {
       MPI_Gather(sub_array, num_local_elements, MPI_INT, result, num_local_elements, MPI_INT, 0, MPI_COMM_WORLD);
       if (pid==0) {
         matrix = merge_scattered_arrays(matrix, leftovers, lo, result, size);
+        printf("merged\n");
       }
 
       //--------------SHARE RESULT TO ALL PROCESSES-----------
@@ -120,7 +118,7 @@ int main(int argc,char* argv[]) {
       char output[50];
       sprintf(output,"outputs/%dvertices_%d%d%d_%d%d_%dprocesses.out",size,tm.tm_mday,tm.tm_mon + 1, tm.tm_year + 1900,tm.tm_hour,tm.tm_min,np);
       FILE* fp = fopen(output, "w");
-      print_matrix(matrix, size, fp);
+      print_matrix_to_file(matrix, size, fp);
       fclose(fp);
       printf("done\n");
 
