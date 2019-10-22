@@ -67,27 +67,27 @@ int main(int argc, char* argv[]) {
 
   //-------------SEND LEFT OVERS TO ROOT-------------
   char buf[20];
-  // if(pid == 0) {
-  //   if (lo > 0) {
-  //     leftovers = malloc(lo * sizeof(int));
-  //     for (i = 0; i < lo; i++) {
-  //       leftovers[i] = matrix[i];
-  //     }
-  //   }
-  // }
-  //
-  // //--------------LOOPING OVER ITERATIONS--------------
-  // for(k = 0; k<size; k++) {
-  //   //--------------RUN ALGORITHMN ON LEFTOVERS-----------
-  //   if(pid==0) {
-  //     if (lo>0) {
-  //       snprintf(buf, 20, "BEFORE_sub_array_%d", -1); // puts string into buffer
-  //       //print_int_array(leftovers,lo,buf);
-  //       leftovers = update_local_array_with_matrix(leftovers, 0, lo, k, matrix, size);
-  //       snprintf(buf, 20, "AFTER_sub_array_%d", -1); // puts string into buffer
-  //       //print_int_array(leftovers,lo,buf);
-  //     }
-  //   }
+  if(pid == 0) {
+    if (lo > 0) {
+      leftovers = malloc(lo * sizeof(int));
+      for (i = 0; i < lo; i++) {
+        leftovers[i] = matrix[i];
+      }
+    }
+  }
+
+  //--------------LOOPING OVER ITERATIONS--------------
+  for(k = 0; k<size; k++) {
+    //--------------RUN ALGORITHMN ON LEFTOVERS-----------
+    if(pid==0) {
+      if (lo>0) {
+        snprintf(buf, 20, "BEFORE_sub_array_%d", -1); // puts string into buffer
+        //print_int_array(leftovers,lo,buf);
+        leftovers = update_local_array_with_matrix(leftovers, 0, lo, k, matrix, size);
+        snprintf(buf, 20, "AFTER_sub_array_%d", -1); // puts string into buffer
+        //print_int_array(leftovers,lo,buf);
+      }
+    }
 
     //--------------RUN ALGORITHMN ON SUBARRAYS-----------
     snprintf(buf, 20, "BEFORE_sub_array_%d", pid); // puts string into buffer
@@ -98,6 +98,7 @@ int main(int argc, char* argv[]) {
 
     MPI_Barrier(MPI_COMM_WORLD);
     int* result = malloc(sizeof(int) * np * num_local_elements);
+  }
 
   //   //--------------MERGE ITERATION RESULT--------------
   //   MPI_Gather(sub_array, num_local_elements, MPI_INT, result, num_local_elements, MPI_INT, 0, MPI_COMM_WORLD);
@@ -133,7 +134,6 @@ int main(int argc, char* argv[]) {
 
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
-}
 }
 
 void print_matrix(int *matrix, int size) {
@@ -171,7 +171,8 @@ void floyd(int *sub_array, int size, int pid, int np) {
 
 // Reurn the rank of the process that owns global row k
 int owner(int k, int np, int size) {
-  return k/(size/np);
+  int pid = k/(size/np);
+  return pid;
 }
 
 // Copy the row with the global subscript k into row_k
