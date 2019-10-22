@@ -9,23 +9,17 @@
 #define INFINITY 100000000
 
 #define MAX_LINE_LEN 256
-struct MatrixContainer {
+typedef struct {
   int size;
   int * matrix;
   double time;
-};
-
-typedef struct MatrixContainer MatrixContainer;
+} MatrixContainer;
 
 MatrixContainer get_Matrix(char *filename, int size)
 {
-    double t = MPI_Wtime();
+    double t_start = MPI_Wtime();
     MatrixContainer Result;
-    //double t = omp_get_wtime();
-    //build rows
-    int *matrix = malloc(size*size*sizeof(int));
-    //matrix = malloc(sizeof(int)*size);
-
+    int *matrix = malloc((size*size)*sizeof(int));
 
     FILE *fp = fopen(filename, "rb"); /* should check the result */
     char type[MAX_LINE_LEN];
@@ -33,30 +27,25 @@ MatrixContainer get_Matrix(char *filename, int size)
 
     /*read in size of matrix*/
     fread(&i_elem, sizeof(int), 1, fp);    /* already know this... */
-    printf("SIZE %d \n",i_elem);
+    printf("SIZE %d \n", i_elem);
 
-    for (i=0; i<size; i++) {
-      for (j=0; j<size; j++) {
-
+    for (i = 0; i < size; i++) {
+      for (j = 0; j < size; j++) {
         /*read element*/
-        //fscanf(fp,"%d", &i_elem);
         fread(&i_elem, sizeof(int), 1, fp);
-        //printf("%d ",i_elem);
         //diagonal values will be zero
-        if (i==j) {
+        if (i == j) {
           i_elem = 0;
-
         //unreachable values set distance to infinity
         } else if (i_elem == 0) {
           i_elem = INFINITY;
         }
-
         matrix[i*size + j] = i_elem;
       }
     }
     Result.size = size;
     Result.matrix = matrix;
-    double time_taken = MPI_Wtime() - t;
+    double time_taken = MPI_Wtime() - t_start;
     Result.time = time_taken;
     return Result;
 }
