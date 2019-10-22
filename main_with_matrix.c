@@ -117,7 +117,7 @@ int main(int argc,char* argv[]) {
       char output[50];
       sprintf(output,"outputs/%dvertices_%d%d%d_%d%d_%dprocesses.out",size,tm.tm_mday,tm.tm_mon + 1, tm.tm_year + 1900,tm.tm_hour,tm.tm_min,np);
       FILE* fp = fopen(output, "w");
-      print_matrix(matrix, size, fp);
+      print_matrix2(matrix, size, fp);
       fclose(fp);
       printf("done\n");
 

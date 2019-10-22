@@ -11,7 +11,6 @@ void floyd(int *sub_array, int size, int pid, int np);
 int owner(int k, int np, int size);
 void copy_row(int *sub_array, int size, int np, int *row_k, int k);
 
-
 int main(int argc, char* argv[]) {
   if(argc == 1) {
     fprintf(stderr, "No Extra Command Line Argument Passed Other Than Program Name\n");
@@ -68,27 +67,27 @@ int main(int argc, char* argv[]) {
 
   //-------------SEND LEFT OVERS TO ROOT-------------
   char buf[20];
-  if(pid == 0) {
-    if (lo > 0) {
-      leftovers = malloc(lo * sizeof(int));
-      for (i = 0; i < lo; i++) {
-        leftovers[i] = matrix[i];
-      }
-    }
-  }
-
-  //--------------LOOPING OVER ITERATIONS--------------
-  for(k = 0; k<size; k++) {
-    //--------------RUN ALGORITHMN ON LEFTOVERS-----------
-    if(pid==0) {
-      if (lo>0) {
-        snprintf(buf, 20, "BEFORE_sub_array_%d", -1); // puts string into buffer
-        //print_int_array(leftovers,lo,buf);
-        leftovers = update_local_array_with_matrix(leftovers, 0, lo, k, matrix, size);
-        snprintf(buf, 20, "AFTER_sub_array_%d", -1); // puts string into buffer
-        //print_int_array(leftovers,lo,buf);
-      }
-    }
+  // if(pid == 0) {
+  //   if (lo > 0) {
+  //     leftovers = malloc(lo * sizeof(int));
+  //     for (i = 0; i < lo; i++) {
+  //       leftovers[i] = matrix[i];
+  //     }
+  //   }
+  // }
+  //
+  // //--------------LOOPING OVER ITERATIONS--------------
+  // for(k = 0; k<size; k++) {
+  //   //--------------RUN ALGORITHMN ON LEFTOVERS-----------
+  //   if(pid==0) {
+  //     if (lo>0) {
+  //       snprintf(buf, 20, "BEFORE_sub_array_%d", -1); // puts string into buffer
+  //       //print_int_array(leftovers,lo,buf);
+  //       leftovers = update_local_array_with_matrix(leftovers, 0, lo, k, matrix, size);
+  //       snprintf(buf, 20, "AFTER_sub_array_%d", -1); // puts string into buffer
+  //       //print_int_array(leftovers,lo,buf);
+  //     }
+  //   }
 
     //--------------RUN ALGORITHMN ON SUBARRAYS-----------
     snprintf(buf, 20, "BEFORE_sub_array_%d", pid); // puts string into buffer
