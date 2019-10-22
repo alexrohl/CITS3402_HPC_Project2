@@ -55,9 +55,12 @@ int main(int argc,char* argv[]) {
     double t_start = MPI_Wtime();
     //---------------PARTITION MATRIX------------------
     MPI_Bcast(matrix, size*size, MPI_INT, 0, MPI_COMM_WORLD);
+
     int *sub_array = malloc(sizeof(int) * num_local_elements);
+
     MPI_Scatter(&matrix[lo], num_local_elements, MPI_INT, sub_array,
                 num_local_elements, MPI_INT, 0, MPI_COMM_WORLD);
+
     int global_index = lo + num_local_elements*pid;
     printf("Process %d has %d elements starting at index %d\n",pid,num_local_elements,global_index);
 
