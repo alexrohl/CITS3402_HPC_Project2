@@ -11,7 +11,6 @@ void floyd(int *sub_array, int size, int pid, int np);
 int owner(int k, int np, int size);
 void copy_row(int *sub_array, int size, int np, int *row_k, int k);
 
-
 int main(int argc, char* argv[]) {
   if(argc == 1) {
     fprintf(stderr, "No Extra Command Line Argument Passed Other Than Program Name\n");
@@ -99,6 +98,7 @@ int main(int argc, char* argv[]) {
 
     MPI_Barrier(MPI_COMM_WORLD);
     int* result = malloc(sizeof(int) * np * num_local_elements);
+  }
 
   //   //--------------MERGE ITERATION RESULT--------------
   //   MPI_Gather(sub_array, num_local_elements, MPI_INT, result, num_local_elements, MPI_INT, 0, MPI_COMM_WORLD);
@@ -134,7 +134,6 @@ int main(int argc, char* argv[]) {
 
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
-}
 }
 
 void print_matrix(int *matrix, int size) {
@@ -172,7 +171,8 @@ void floyd(int *sub_array, int size, int pid, int np) {
 
 // Reurn the rank of the process that owns global row k
 int owner(int k, int np, int size) {
-  return k/(size/np);
+  int pid = k/(size/np);
+  return pid;
 }
 
 // Copy the row with the global subscript k into row_k
