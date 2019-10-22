@@ -102,7 +102,7 @@ int main(int argc,char* argv[]) {
       MPI_Gather(sub_array, num_local_elements, MPI_INT, result, num_local_elements, MPI_INT, 0, MPI_COMM_WORLD);
       if (pid==0) {
         matrix = merge_scattered_arrays(matrix, leftovers, lo, result, size);
-        printf("merged\n");
+        //printf("merged\n");
       }
 
       //--------------SHARE RESULT TO ALL PROCESSES-----------
