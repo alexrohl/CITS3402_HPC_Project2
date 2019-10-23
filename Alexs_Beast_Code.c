@@ -8,6 +8,7 @@
 
 
 int main(int argc,char* argv[]) {
+  int i, j, k;
   int pid,np,size,lo,num_local_elements; //lo: left overs
   int *leftovers;
   FILE *fp;
@@ -42,7 +43,6 @@ int main(int argc,char* argv[]) {
     //parse adjacency matrix (zeroes are converted to 'infinity')
     MatrixContainer matrix_container = get_Matrix(argv[1],size);
     matrix = matrix_container.matrix;
-    int i,j,k;
     //prints adjacency matrix
     //print_matrix(matrix,size);
     krow = get_k_row(krow, matrix, size, 0);
@@ -73,14 +73,14 @@ int main(int argc,char* argv[]) {
   if(pid==0) {
     if (lo>0) {
       leftovers = malloc(sizeof(int)*lo);
-      for (int i=0;i<lo;i++) {
+      for (i=0;i<lo;i++) {
         leftovers[i] = matrix[i];
       }
     }
   }
 
   //--------------LOOPING OVER ITERATIONS--------------
-  for(int k = 0;k<size;k++) {
+  for(k = 0;k<size;k++) {
 
     //--------------RUN ALGORITHMN ON LEFTOVERS-----------
     if(pid==0) {
@@ -119,11 +119,11 @@ int main(int argc,char* argv[]) {
 
       if (pid==0) {
         row_displs[0] = 0;
-        for (int i=1; i<np; i++) {
+        for (i=1; i<np; i++) {
            row_displs[i] = row_displs[i-1] + krow_entries[i-1];
         }
         col_displs[0] = 0;
-        for (int i=1; i<np; i++) {
+        for (i=1; i<np; i++) {
            col_displs[i] = col_displs[i-1] + kcol_entries[i-1];
         }
 
