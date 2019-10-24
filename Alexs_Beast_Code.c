@@ -1,3 +1,5 @@
+//Written by Alex Rohl 22233158
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,6 +26,7 @@ int main(int argc,char* argv[]) {
     /*read in size of matrix*/
     fread(&size, sizeof(int), 1, fp);
     printf("Matrix Size: %d\n",size);
+
     num_local_elements = size*size/np;
     lo = size*size - np*num_local_elements;
     printf("Number of processes: %d\n",np);
@@ -47,7 +50,6 @@ int main(int argc,char* argv[]) {
     //print_matrix(matrix,size);
     krow = get_k_row(krow, matrix, size, 0);
     kcol = get_k_col(kcol, matrix, size, 0);
-
   }
   double t_start = MPI_Wtime();
 
@@ -60,50 +62,33 @@ int main(int argc,char* argv[]) {
   int global_index = lo + num_local_elements*pid;
   printf("Process %d has %d elements starting at index %d\n",pid,num_local_elements,global_index);
 
-  LocalData local_data;
-  local_data.local_array = sub_array;
-  //send 0th row and 0th column to arrays
+  //send 0th row and 0th column to partitions
   MPI_Bcast(krow, size, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(kcol, size, MPI_INT, 0, MPI_COMM_WORLD);
-
-
 
   //-------------SEND LEFT OVERS TO ROOT-------------
   char buf[20];
   if(pid==0) {
     if (lo>0) {
-      leftovers = malloc(sizeof(int)*lo);
-      for (i=0;i<lo;i++) {
-        leftovers[i] = matrix[i];
+      sub_array = malloc(sizeof(int)*(lo+num_local_elements));
+      for (i=0;i<lo+num_local_elements;i++) {
+        sub_array[i] = matrix[i];
       }
+      global_index = 0;
+      num_local_elements+=lo;
     }
   }
+
+  LocalData local_data;
+  local_data.local_array = sub_array;
 
   //--------------LOOPING OVER ITERATIONS--------------
   for(k = 0;k<size;k++) {
 
-    //--------------RUN ALGORITHMN ON LEFTOVERS-----------
-    if(pid==0) {
-      if (lo>0) {
-        snprintf(buf, 20, "BEFORE_sub_array_%d", -1); // puts string into buffer
-        //print_int_array(leftovers,lo,buf);
-        leftovers = update_local_array_with_matrix(leftovers, 0, lo, k, matrix, size);
-        snprintf(buf, 20, "AFTER_sub_array_%d", -1); // puts string into buffer
-        //print_int_array(leftovers,lo,buf);
-      }
-    }
-
     //--------------RUN ALGORITHMN ON SUBARRAYS-----------
-    snprintf(buf, 20, "BEFORE_sub_array_%d", pid); // puts string into buffer
-    //print_int_array(sub_array,num_local_elements,buf);
     local_data = update_local_array_with_k(local_data, global_index, num_local_elements, k, krow, kcol, size);
-    snprintf(buf, 20, "AFTER_sub_array_%d", pid); // puts string into buffer
-    //print_int_array(sub_array,num_local_elements,buf);
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    //int* result = malloc(sizeof(int) * np * num_local_elements);
-
-    //--------------MERGE K ROWS--------------
+    //--------------MERGE THE NEXT KROW AND K COL--------------
     if (k<size-1) {
       //Gather krow entries
       int* krow_entries = malloc(sizeof(int) * np);
@@ -116,7 +101,6 @@ int main(int argc,char* argv[]) {
       //get displacements
       int* row_displs = malloc( np * sizeof(int) );
       int* col_displs = malloc( np * sizeof(int) );
-
       if (pid==0) {
         row_displs[0] = 0;
         for (i=1; i<np; i++) {
@@ -126,45 +110,26 @@ int main(int argc,char* argv[]) {
         for (i=1; i<np; i++) {
            col_displs[i] = col_displs[i-1] + kcol_entries[i-1];
         }
-
-        //printf("Building %d row and column\n",k+1);
-        //print_int_array(krow_entries,np,"krow_entries");
-        //print_int_array(row_displs,np,"row_displs");
-        //print_int_array(kcol_entries,np,"kcol_entries");
-        //print_int_array(col_displs,np,"col_displs");
-
-
-
-
-
       }
-      //use lengths to make k+1 row
+
+      //use displacements to make k+1 row
       MPI_Gatherv(local_data.next_krow, local_data.next_krow_size, MPI_INT, krow, krow_entries, row_displs, MPI_INT, 0, MPI_COMM_WORLD);
 
-      //use lengths to make k+1 col
+      //use displacements to make k+1 col
       MPI_Gatherv(local_data.next_kcol, local_data.next_kcol_size, MPI_INT, kcol, kcol_entries, col_displs, MPI_INT, 0, MPI_COMM_WORLD);
-
-      /* INCLUDE ELEMENTS FROM LEFTOVERS??
-      if (pid==0) {
-        matrix = merge_scattered_arrays(matrix, leftovers, lo, result, size);
-      }
-      */
-
 
       //--------------SHARE RESULT TO ALL PROCESSES-----------
       MPI_Bcast(krow, size, MPI_INT, 0, MPI_COMM_WORLD);
       MPI_Bcast(kcol, size, MPI_INT, 0, MPI_COMM_WORLD);
     }
-
   }
 
-  //--------------MERGE ITERATION RESULT--------------
-  int* result = malloc(sizeof(int) * np * num_local_elements);
-  MPI_Gather(sub_array, num_local_elements, MPI_INT, result, num_local_elements, MPI_INT, 0, MPI_COMM_WORLD);
-  if (pid==0) {
-    matrix = merge_scattered_arrays(matrix, leftovers, lo, result, size);
-    printf("merged\n");
-  }
+  //--------------MERGE RESULT AFTER K ITERATIONS--------------
+  int* indices = malloc(sizeof(int) * np);
+  int* num_local_elements_list = malloc(sizeof(int) * np);
+  MPI_Gather(&global_index,1,MPI_INT,indices,1,MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Gather(&num_local_elements,1,MPI_INT,num_local_elements_list,1,MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Gatherv(local_data.local_array, num_local_elements, MPI_INT, matrix, num_local_elements_list, indices, MPI_INT, 0, MPI_COMM_WORLD);
 
   //--------------PRINT RESULT--------------
   if (pid==0) {
@@ -179,14 +144,12 @@ int main(int argc,char* argv[]) {
     print_matrix_to_file(matrix, size, fp);
     fclose(fp);
     printf("done\n");
-
     double runtime = MPI_Wtime() - t_start;
     printf("Time taken is %f seconds\n", runtime);
-    //free(result);
-    free(matrix);
-  }
-  free(sub_array);
 
+  }
   MPI_Barrier(MPI_COMM_WORLD);
+  free(sub_array);
+  free(matrix);
   MPI_Finalize();
 }

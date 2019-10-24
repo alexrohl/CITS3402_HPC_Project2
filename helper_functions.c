@@ -234,3 +234,17 @@ int * merge_scattered_arrays(int * matrix, int * leftovers, int lo, int* result,
   assert(matrix[lo]==result[0]);
   return matrix;
 }
+
+int * merge_scattered_array(int *result, int * leftovers, int lo, int* matrix, int size) {
+  //assert(matrix[lo] == result[0]);
+  if (lo > 0) {
+    for (i=0;i<lo;i++) {
+      matrix[i] = leftovers[i];
+    }
+  }
+  for (i=lo; i<size; i++) {
+    matrix[i] = result[i-lo];
+  }
+  assert(result[lo]==matrix[0]);
+  return result;
+}
