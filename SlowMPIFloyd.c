@@ -1,3 +1,6 @@
+//Written by Alex Rohl 22233158, Farruh Mavlonov (22252282)
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,6 +39,7 @@ int main(int argc,char* argv[]) {
     }
 
     //-----------BROADCAST SIZES---------------
+    //Sends the address of the data to all nodes
     MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&num_local_elements, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&lo, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -56,6 +60,7 @@ int main(int argc,char* argv[]) {
     //---------------PARTITION MATRIX------------------
     MPI_Bcast(matrix, size*size, MPI_INT, 0, MPI_COMM_WORLD);
     int *sub_array = malloc(sizeof(int) * num_local_elements);
+    //Splits array into separate pieces to be sent to all other nodes
     MPI_Scatter(&matrix[lo], num_local_elements, MPI_INT, sub_array,
                 num_local_elements, MPI_INT, 0, MPI_COMM_WORLD);
     int global_index = lo + num_local_elements*pid;
@@ -99,6 +104,7 @@ int main(int argc,char* argv[]) {
       int* result = malloc(sizeof(int) * np * num_local_elements);
 
       //--------------MERGE ITERATION RESULT--------------
+      //merges the scattered pieces into a single array as seen by the root node
       MPI_Gather(sub_array, num_local_elements, MPI_INT, result, num_local_elements, MPI_INT, 0, MPI_COMM_WORLD);
       if (pid==0) {
         matrix = merge_scattered_arrays(matrix, leftovers, lo, result, size);

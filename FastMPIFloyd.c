@@ -1,4 +1,4 @@
-//Written by Alex Rohl 22233158
+//Written by Alex Rohl 22233158, Farruh Mavlonov (22252282)
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,6 +34,7 @@ int main(int argc,char* argv[]) {
   }
 
   //-----------BROADCAST SIZES---------------
+  //Sends the address of the variables to all other nodes
   MPI_Bcast(&size, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&num_local_elements, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&lo, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -53,10 +54,10 @@ int main(int argc,char* argv[]) {
   }
   double t_start = MPI_Wtime();
 
-
   //---------------PARTITION MATRIX------------------
   MPI_Bcast(matrix, size*size, MPI_INT, 0, MPI_COMM_WORLD);
   int *sub_array = malloc(sizeof(int) * num_local_elements);
+  //Splits the array into pieces of equal size and sends each separate piece to the other nodes
   MPI_Scatter(&matrix[lo], num_local_elements, MPI_INT, sub_array,
               num_local_elements, MPI_INT, 0, MPI_COMM_WORLD);
   int global_index = lo + num_local_elements*pid;
@@ -92,6 +93,7 @@ int main(int argc,char* argv[]) {
     if (k<size-1) {
       //Gather krow entries
       int* krow_entries = malloc(sizeof(int) * np);
+      //Merges the scattered array back into a single array as seen by the root node
       MPI_Gather(&local_data.next_krow_size,1,MPI_INT,krow_entries,1,MPI_INT, 0, MPI_COMM_WORLD);
 
       //Gather kcol entries
@@ -113,6 +115,7 @@ int main(int argc,char* argv[]) {
       }
 
       //use displacements to make k+1 row
+      //using the information about the number of scattered elements and the displacements of these elements, GatherV will merge this information into one array as seen by the root node
       MPI_Gatherv(local_data.next_krow, local_data.next_krow_size, MPI_INT, krow, krow_entries, row_displs, MPI_INT, 0, MPI_COMM_WORLD);
 
       //use displacements to make k+1 col

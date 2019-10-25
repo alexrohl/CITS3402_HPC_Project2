@@ -1,3 +1,6 @@
+//Written by Alex Rohl 22233158, Farruh Mavlonov (22252282)
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,6 +53,6 @@ int main(int argc,char* argv[]) {
   //free(result);
   free(matrix);
 
-  
+
   return 0;
 }
